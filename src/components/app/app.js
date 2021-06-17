@@ -14,64 +14,55 @@ export default class App extends Component {
 
   state = {
     todoData: [
-      this.createTodoItem('Drink Cofee'),
-      this.createTodoItem('Make Awesome App'),
-      this.createTodoItem('Have a lunch')
-    ]
+      this.createItem('Drink Coffee'),
+      this.createItem('Make Awesome App'),
+      this.createItem('Have a lunch')
+    ],
+    term: ''
   };
 
-  createTodoItem(label) {
+  createItem(label) {
     return {
       label,
       important: false,
       done: false,
       id: this.maxId++
-    }
-  }
-
-  deleteItem = (id) => {
-    this.setState(({ todoData }) => {
-      const idx = todoData.findIndex((el) => el.id === id);
-
-      const newArray = [...todoData.slice(0, idx), ...todoData.slice(idx + 1)];
-
-      return {
-        todoData: newArray
-      }
-      
-    });
-  }
-
-  addItem = (text) => {
-    const newItem = this.createTodoItem(text);
-
-    this.setState(({ todoData }) => {
-      const newArr = [...todoData, newItem];
-
-      return {
-        todoData: newArr
-      }
-    });
+    };
   };
 
-  toggleProperty(arr, id, propName) {
+  toggleProperty = (arr, id, propName) => {
     const idx = arr.findIndex((el) => el.id === id);
 
       const oldItem = arr[idx];
+
       const newItem = { ...oldItem, [propName]: !oldItem[propName] };
 
       return [
-          ...arr.slice(0, idx),
-          newItem,
-          ...arr.slice(idx + 1)
+        ...arr.slice(0, idx), newItem, ...arr.slice(idx + 1)
       ];
-  }
+  };
 
-  onToggleImportant = (id) => {
+  onAddedItem = (text) => {
     this.setState(({ todoData }) => {
+      const newItem = this.createItem(text);
+
+      const newData = [...todoData, newItem];
+
       return {
-        todoData: this.toggleProperty(todoData, id, 'important')
-      }
+        todoData: newData
+      };
+    });
+  };
+
+  onDeleteItem = (id) => {
+    this.setState(({ todoData }) => {
+      const idx = todoData.findIndex((el) => el.id === id);
+
+      const newData = [...todoData.slice(0, idx), ...todoData.slice(idx + 1)];
+
+      return {
+        todoData: newData
+      };
     });
   };
 
@@ -79,30 +70,55 @@ export default class App extends Component {
     this.setState(({ todoData }) => {
       return {
         todoData: this.toggleProperty(todoData, id, 'done')
-      }
+      };
     });
+  };
+
+  onToggleImportant = (id) => {
+    this.setState(({ todoData }) => {
+      return {
+        todoData: this.toggleProperty(todoData, id, 'important')
+      };
+    });
+  };
+
+  onSearchItem = (data, term) => {
+    if (term.length === 0) {
+      return data;
+    }
+
+    return data.filter((item) => item.label.toLowerCase()
+      .indexOf(term.toLowerCase()) > -1);
+  };
+
+  onSearchChange = (term) => {
+    this.setState({ term });
   };
 
   render() {
 
-    const { todoData } = this.state;
+    const { todoData, term } = this.state;
 
-    const doneCount = todoData.filter(el => el.done).length;
+    const doneCount = todoData.filter((item) => item.done).length;
+
     const todoCount = todoData.length - doneCount;
+
+    const visiableItems = this.onSearchItem(todoData, term);
 
     return (
       <div className="todo-app">
-        <AppHeader toDo={ todoCount } done={ doneCount }/>
+       <AppHeader toDo={ todoCount } done={ doneCount } />
         <div className="top-panel d-flex">
-          <SearchPanel/>
-          <ItemStatusFilter/>
+          <SearchPanel onSearch={ this.onSearchChange } />
+          <ItemStatusFilter />
         </div>
-        <TodoList todos={ todoData }
-                  onDeleted={ this.deleteItem }
-                  onToggleImportant={ this.onToggleImportant }
-                  onToggleDone={ this.onToggleDone }/>
-        <ItemAddForm onItemAdded={ this.addItem } />
+        <TodoList onDone={ this.onToggleDone }
+                  onImportant={ this.onToggleImportant }
+                  onDeleted={ this.onDeleteItem }
+                  data={ visiableItems }
+                  classNames={ this.classNames } />
+        <ItemAddForm onAdded={ this.onAddedItem } />
       </div>
     );
-  } 
+  }
 };
